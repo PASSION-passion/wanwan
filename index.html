@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽奖转盘</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f8f8;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+        #wheel-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            margin: 50px auto;
+            background-color: #ffefef;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            transform: rotate(0deg);
+        }
+        .segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transform-origin: 100% 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            text-align: center;
+        }
+        .segment:nth-child(1) { background-color: #f44336; } /* 红色 */
+        .segment:nth-child(2) { background-color: #ff9800; } /* 橙色 */
+        .segment:nth-child(3) { background-color: #ffeb3b; color: black; } /* 黄色 */
+        .segment:nth-child(4) { background-color: #4caf50; } /* 绿色 */
+        .segment:nth-child(5) { background-color: #2196f3; } /* 蓝色 */
+        .segment:nth-child(6) { background-color: #9c27b0; } /* 紫色 */
+        
+        #pointer {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 30px solid red;
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        #output {
+            font-size: 1.2em;
+            color: #333;
+            margin-top: 20px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 1em;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>输入姓名并点击按钮抽奖</h1>
+    <input type="text" id="nameInput" placeholder="请输入姓名">
+    <button onclick="startSpin()">开始抽奖</button>
+
+    <div id="output"></div>
+    <div id="wheel-container">
+        <div id="pointer"></div>
+        <div id="wheel"></div>
+    </div>
+
+    <script>
+        // 定义奖项
+        const prizes = ["大礼包", "一顿饭", "蓝牙耳机", "保温杯", "自行车", "好运"];
+
+        // 定义特定名字列表
+        const bigPrizeNames = ["权志超", "汪姿君", "陈佳瑶", "周灿", "廖静仪", "凌开贤"];
+        const restaurantPrizeNames = ["史心雨", "郭怡萱", "漆煜琦", "刘骏豪", "王慧鑫", "卢震宇"];
+        const goodLuckNames = ["高强"];
+        
+        function setupWheel() {
+            const wheel = document.getElementById("wheel");
+            wheel.innerHTML = ""; // 清空之前的内容
+
+            // 创建6个分段并显示奖项名称
+            for (let i = 0; i < 6; i++) {
+                const segment = document.createElement("div");
+                segment.className = "segment";
+                segment.style.transform = `rotate(${i * 60}deg)`;
+                
+                // 奖项名称
+                const text = document.createElement("span");
+                text.innerHTML = prizes[i];
+                segment.appendChild(text);
+                wheel.appendChild(segment);
+            }
+        }
+
+        function startSpin() {
+            const name = document.getElementById("nameInput").value.trim();
+            if (!name) {
+                document.getElementById("output").innerText = "请输入姓名！";
+                return;
+            }
+
+            // 检查输入的名字是否在特定名字列表中
+            let prizeIndex;
+            if (bigPrizeNames.includes(name)) {
+                prizeIndex = 0; // 大礼包
+            } else if (restaurantPrizeNames.includes(name)) {
+                prizeIndex = 1; // 一顿饭
+            } else if (goodLuckNames.includes(name)) {
+                prizeIndex = 5; // 好运
+            } else {
+                document.getElementById("output").innerText = "抱歉，该名字没有抽奖资格。";
+                return; // 退出函数，不进行抽奖
+            }
+
+            document.getElementById("output").innerText = `抽奖中，${name}祝你好运！`;
+            setupWheel();
+
+            const wheel = document.getElementById("wheel");
+
+            // 初始化旋转参数
+            let angle = 0;
+            const totalSpins = 5 * 360; // 转5圈的总角度
+            const finalAngle = totalSpins + (360 - prizeIndex * 60); // 计算目标角度
+
+            // 动态控制旋转速度
+            let speed = 30; // 初始速度
+            let isDecelerating = false;
+
+            // 开始旋转
+            const spinInterval = setInterval(() => {
+                // 每次旋转增加的角度
+                angle += speed;
+                wheel.style.transform = `rotate(${angle}deg)`;
+
+                // 加速阶段
+                if (!isDecelerating && angle >= totalSpins - 720) { // 靠近目标角度时减速
+                    isDecelerating = true;
+                }
+
+                // 减速控制
+                if (isDecelerating) {
+                    speed *= 0.97; // 缓慢减速
+                    if (speed <= 0.5) {
+                        clearInterval(spinInterval);
+                        wheel.style.transform = `rotate(${finalAngle}deg)`; // 精确停在最终位置
+                        document.getElementById("output").innerText = `恭喜${name}，你获得了${prizes[prizeIndex]}！`;
+                    }
+                }
+            }, 20);
+        }
+
+        // 初始化转盘，显示奖项名称
+        setupWheel();
+    </script>
+</body>
+</html>
